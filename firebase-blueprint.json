@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "Issue": {
+      "title": "Issue",
+      "description": "A reported infrastructure problem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "type": { "type": "string", "enum": ["road", "water", "electricity", "waste", "other"] },
+        "interactionType": { "type": "string", "enum": ["report", "suggestion", "inquiry"] },
+        "description": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "address": { "type": "string" }
+          },
+          "required": ["lat", "lng"]
+        },
+        "regionId": { "type": "string" },
+        "severity": { "type": "integer", "enum": [1, 2, 3] },
+        "status": { "type": "string", "enum": ["pending", "verified", "in-progress", "completed", "resolved"] },
+        "currentStage": { "type": "string", "enum": ["detected", "sorting", "processing", "verification", "resolution"] },
+        "mediaUrls": { "type": "array", "items": { "type": "string" } },
+        "voiceUrl": { "type": "string" },
+        "reportCount": { "type": "integer" },
+        "anonymous": { "type": "boolean" },
+        "reporterId": { "type": "string" },
+        "assignedInstitution": { "type": "string" },
+        "createdAt": { "type": "integer" },
+        "updatedAt": { "type": "integer" },
+        "reportedByCitizen": { "type": "boolean" }
+      },
+      "required": ["type", "description", "location", "severity", "status", "createdAt"]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "A community-led project to fix an issue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "issueId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "participantCount": { "type": "integer" },
+        "progress": { "type": "number" },
+        "status": { "type": "string", "enum": ["planning", "active", "completed"] },
+        "beforeImageUrl": { "type": "string" },
+        "afterImageUrl": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "sponsorCount": { "type": "integer" }
+      },
+      "required": ["issueId", "title", "description", "status", "creatorId"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public user profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "preferredContactMethod": { "type": "string", "enum": ["email", "phone", "app"] },
+        "role": { "type": "string", "enum": ["citizen", "official", "partner"] },
+        "joinedAt": { "type": "integer" },
+        "points": { "type": "integer" }
+      },
+      "required": ["displayName", "role"]
+    },
+    "Participation": {
+      "title": "Participation",
+      "description": "Record of a user joining or sponsoring a campaign",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "campaignId": { "type": "string" },
+        "type": { "type": "string", "enum": ["join", "sponsor"] },
+        "amount": { "type": "number", "description": "Amount sponsored, if applicable" },
+        "pointsEarned": { "type": "integer" },
+        "createdAt": { "type": "integer" }
+      },
+      "required": ["userId", "campaignId", "type", "createdAt"]
+    },
+    "GovernmentAlert": {
+      "title": "GovernmentAlert",
+      "description": "Critical alerts and announcements from authorities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["critical", "warning", "info"] },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "integer" },
+        "expiresAt": { "type": "integer" }
+      },
+      "required": ["title", "message", "type", "active", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/alerts/{alertId}": {
+      "schema": "GovernmentAlert",
+      "description": "Collection of government alerts"
+    },
+    "/issues/{issueId}": {
+      "schema": "Issue",
+      "description": "Infrastructure issues collection"
+    },
+    "/campaigns/{campaignId}": {
+      "schema": "Campaign",
+      "description": "Community campaigns collection"
+    },
+    "/campaigns/{campaignId}/participations/{userId}": {
+      "schema": "Participation",
+      "description": "Participants for a specific campaign"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Complete user documents"
+    },
+    "/users/{userId}/participations/{campaignId}": {
+      "schema": "Participation",
+      "description": "Campaigns a user has participated in"
+    }
+  }
+}

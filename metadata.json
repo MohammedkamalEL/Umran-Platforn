@@ -1,0 +1,15 @@
+{
+  "name": "عمران - النظام القومي لإعادة الإعمار",
+  "description": "منصة وطنية شاملة لإعادة الإعمار والتنمية الرقمية، تتيح للمواطنين الإبلاغ عن المشكلات الميدانية وتوفر للمؤسسات السيادية أدوات التحكم والرقابة والمتابعة اللحظية عبر خرائط تفاعلية وأنظمة تحليلية متطورة.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "Offline-first reporting",
+    "Interactive Map Dashboard",
+    "Voice/Text AI Processing",
+    "Community Campaigning"
+  ]
+}

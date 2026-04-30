@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidIssue(data) {
+      return data.type in ['road', 'water', 'electricity', 'waste', 'other'] &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.location.lat is number && data.location.lng is number &&
+             data.severity in [1, 2, 3] &&
+             data.status in ['pending', 'verified', 'in-progress', 'completed', 'resolved'] &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    function isValidCampaign(data) {
+      return data.issueId is string &&
+             data.title is string && data.title.size() <= 100 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.status in ['planning', 'active', 'completed'] &&
+             data.creatorId == request.auth.uid;
+    }
+
+    function isValidParticipation(data) {
+      return isValidId(data.userId) &&
+             isValidId(data.campaignId) &&
+             data.userId == request.auth.uid &&
+             data.type in ['join', 'sponsor'] &&
+             data.pointsEarned is int && data.pointsEarned >= 0 && data.pointsEarned <= 500 &&
+             (data.type == 'sponsor' ? (data.amount is number && data.amount >= 1000) : true) &&
+             data.createdAt == request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.displayName is string && data.displayName.size() <= 100 &&
+             (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1048576)) &&
+             (data.preferredContactMethod == null || data.preferredContactMethod in ['email', 'phone', 'app']) &&
+             data.role in ['citizen', 'official', 'partner'] &&
+             data.points is int;
+    }
+
+    // --- Collections ---
+
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /issues/{issueId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(issueId) && isValidIssue(incoming());
+      allow update: if (
+        isSignedIn() && (
+          // Incremental reports count update
+          (incoming().diff(existing()).affectedKeys().hasOnly(['reportCount', 'updatedAt']) && 
+           incoming().reportCount == existing().reportCount + 1 &&
+           incoming().updatedAt == request.time) ||
+          // Admin/Official status update
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'currentStage', 'assignedInstitution', 'updatedAt']) &&
+           incoming().updatedAt == request.time)
+        )
+      );
+
+      match /movements/{moveId} {
+        allow read: if true;
+        allow create: if isSignedIn() && isValidId(moveId);
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn() && isValidId(commentId);
+      }
+    }
+
+    match /campaigns/{campaignId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if isSignedIn() && isValidId(campaignId) && isValidCampaign(incoming());
+      allow update: if (
+        isSignedIn() && (
+          // ACTION: Sync Participation
+          (
+            incoming().diff(existing()).affectedKeys().hasAny(['participantCount', 'sponsorCount', 'currentAmount', 'progress']) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['participantCount', 'sponsorCount', 'currentAmount', 'progress']) &&
+            // Verify atomicity: a participation document MUST be created in this batch
+            existsAfter(/databases/$(database)/documents/campaigns/$(campaignId)/participations/$(request.auth.uid))
+          ) ||
+          // ACTION: Creator Update
+          (isOwner(existing().creatorId) && incoming().creatorId == existing().creatorId)
+        )
+      );
+
+      match /participations/{userId} {
+        allow read: if true;
+        allow create: if isSignedIn() && userId == request.auth.uid && isValidId(campaignId) && isValidParticipation(incoming());
+        allow delete: if false; // Participations are permanent records
+        allow update: if false;
+      }
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(userId) && incoming().uid == userId;
+      allow update: if isOwner(userId) && 
+        incoming().uid == userId &&
+        isValidUserProfile(incoming()) &&
+        // Prevent role manipulation
+        incoming().role == existing().role &&
+        // Points should only be updated by specific system actions (participations/resolved issues)
+        // For now allowing owner edit if points don't change
+        incoming().points == existing().points;
+
+      match /participations/{campaignId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(campaignId) && isValidParticipation(incoming());
+      }
+    }
+  }
+}

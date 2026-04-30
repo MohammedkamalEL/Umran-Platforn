@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@200;300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Readex+Pro:wght@200;300;400;500;600;700&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", "Readex Pro", "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cairo", sans-serif;
+  --font-accent: "Space Grotesk", sans-serif;
+  --font-serif: "Amiri", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --radius-4xl: 0.5rem;
+  --radius-5xl: 0.75rem;
+  --radius-6xl: 1rem;
+
+  --color-brand-primary: #10b981;
+  --color-brand-accent: #f59e0b;
+  --color-brand-red: #ef4444;
+  --color-brand-blue: #3b82f6;
+  --color-brand-dark: #000000;
+  --color-brand-deep-teal: #e2e8f0;
+  --color-brand-light: #ffffff;
+
+  @keyframes gradient-x {
+    0%, 100% { background-size: 200% 200%; background-position: left center; }
+    50% { background-size: 200% 200%; background-position: right center; }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
+  }
+
+  --animate-gradient-x: gradient-x 5s ease infinite;
+  --animate-shimmer: shimmer 2.5s infinite;
+  --animate-spin-slow: spin-slow 12s linear infinite;
+  --animate-pulse-soft: pulse-soft 3s infinite ease-in-out;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    @apply md:text-[17px] lg:text-[18px] xl:text-[20px];
+    height: 100%;
+  }
+
+  body {
+    @apply font-sans bg-brand-light text-slate-800 antialiased selection:bg-emerald-500/20 selection:text-emerald-500 leading-[1.8] tracking-tight;
+    height: 100%;
+  }
+  
+  h1, h2, h3 {
+    @apply font-display tracking-tight leading-[1.2] transition-colors duration-500 font-extrabold text-slate-900;
+  }
+
+  h4, h5, h6 {
+    @apply font-display tracking-normal leading-relaxed transition-colors duration-500 font-bold text-slate-800;
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: radial-gradient(circle at center, #f8fafc 0%, #ffffff 100%);
+  }
+
+  .tech-grid-unified {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+  }
+
+  .pill-badge {
+    @apply px-4 py-2 bg-slate-100 backdrop-blur-md border border-slate-200 rounded-full text-[10px] font-bold text-slate-600 tracking-widest uppercase flex items-center gap-2;
+  }
+
+  .feature-card-premium {
+    @apply h-full p-8 rounded-lg bg-white backdrop-blur-xl border border-slate-100 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-500 flex flex-col items-center text-center gap-4 shadow-xl;
+  }
+
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::after {
+    @apply content-[''] absolute top-0 -left-[100%] w-full h-full;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    @apply animate-shimmer;
+  }
+
+  .holographic-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-blue-500 to-amber-400 animate-gradient-x;
+  }
+
+  .feature-icon-wrapper {
+    @apply w-16 h-16 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500;
+  }
+  /* The "Professional Card" style requested by the user - Refined for premium feel */
+  .umran-card {
+    @apply bg-white border border-slate-100 rounded-lg shadow-xl transition-all duration-700 hover:border-emerald-500/30 hover:bg-white hover:-translate-y-1;
+  }
+
+  .premium-btn {
+    @apply relative px-10 py-6 bg-emerald-600 text-white rounded-md font-black text-sm uppercase tracking-[0.2em] overflow-hidden transition-all duration-500 hover:bg-emerald-500 hover:shadow-[0_20px_40px_rgba(16,185,129,0.2)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-4;
+  }
+
+  .premium-btn-outline {
+    @apply relative px-10 py-6 bg-white text-slate-900 border border-slate-200 rounded-md font-black text-sm uppercase tracking-[0.2em] overflow-hidden transition-all duration-500 hover:border-emerald-500/50 hover:bg-slate-50 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-4;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-2xl border border-slate-100 rounded-lg shadow-xl overflow-hidden;
+  }
+
+  .glass-premium {
+    @apply backdrop-blur-3xl bg-white/80 border border-slate-100 shadow-[0_8px_32px_0_rgba(0,0,0,0.05)];
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-3xl bg-slate-100/60 border border-slate-200 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)];
+  }
+
+  .bento-card {
+    @apply rounded-lg border border-slate-100 bg-white backdrop-blur-xl p-8 shadow-xl transition-all duration-700 hover:shadow-emerald-500/5 hover:border-emerald-500/20 hover:-translate-y-1;
+  }
+
+  .tech-label {
+    @apply font-accent text-[9px] font-black uppercase tracking-[0.5em] text-slate-400 group-hover:text-emerald-500 transition-colors;
+  }
+
+
+  .action-button {
+    @apply py-5 px-10 rounded-md font-black text-[12px] tracking-[0.25em] transition-all duration-500 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed uppercase overflow-hidden relative font-sans;
+  }
+
+  .sudan-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    mix-blend-mode: overlay;
+  }
+
+  .sudan-pattern-modern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%2310b981' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+  }
+
+  .sudan-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Sophisticated Focus Ring */
+input:focus, textarea:focus {
+  @apply outline-none ring-4 ring-emerald-500/10 border-emerald-500;
+}
