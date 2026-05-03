@@ -416,7 +416,8 @@ export default function Chatbot({ extraContext, onNavigate }: { extraContext?: s
         <p>{cleanContent}</p>
         <button
           onClick={() => { onNavigate(view as any); setIsOpen(false); }}
-          className="w-full py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-emerald-600 transition-all active:scale-95"
+          // className="w-full py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-emerald-600 transition-all active:scale-95"
+          className="fixed bottom-6 left-6 lg:bottom-12 lg:left-12 w-16 h-16 bg-white text-slate-950 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[80] group overflow-hidden border border-slate-100"
         >
           {labelMapping[view]}
         </button>
@@ -429,7 +430,8 @@ export default function Chatbot({ extraContext, onNavigate }: { extraContext?: s
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-28 lg:bottom-10 left-5 lg:left-10 w-14 h-14 bg-white text-slate-900 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[80] border border-slate-100 hover:border-emerald-200"
+        className="fixed bottom-40 lg:bottom-30 left-5 lg:left-10 w-14 h-14 bg-white text-slate-900 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[80] border border-slate-100 hover:border-emerald-200"
+        // className="fixed bottom-6 left-5 md:left-10 z-[80] w-16 h-16 bg-emerald-600 text-white rounded-2xl shadow-2xl shadow-emerald-500/40 border-2 border-emerald-400/40 flex items-center justify-center group overflow-hidden"
       >
         <MessageSquare size={22} />
       </button>
