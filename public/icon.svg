@@ -1,0 +1,14 @@
+<!-- Umran Icon - SVG Code -->
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- الخلفية: دائرة تمثل الشمولية والوحدة -->
+  <circle cx="96" cy="96" r="90" fill="#1e293b" />
+  
+  <!-- رمز البناء: رافعة أو هيكل هندسي -->
+  <path d="M60 140V60L96 40L132 60V140" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- رمز النمو الرقمي: خطوط متصلة تشبه الدوائر الإلكترونية -->
+  <path d="M80 140H112M96 140V110M70 100L96 85L122 100" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- نقطة المركز: تمثل الموقع الجغرافي أو البلاغ -->
+  <circle cx="96" cy="96" r="8" fill="#ef4444" />
+</svg>

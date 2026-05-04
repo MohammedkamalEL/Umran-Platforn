@@ -6377,7 +6377,7 @@ export default function Dashboard({ role = 'citizen', profile }: { role?: 'citiz
                     <MapContainer
                       center={[15.5007, 32.5599]}
                       zoom={12}
-                      className="w-full h-full"
+                      className="w-full h-full z-0"
                       zoomControl={false}
                     >
                       <TileLayer
