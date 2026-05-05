@@ -1192,6 +1192,639 @@
 //   );
 // }
 
+
+
+
+
+// import React, { useState, useRef, useEffect } from 'react';
+// import { motion, AnimatePresence } from 'motion/react';
+// import { Camera, Mic, MapPin, Send, ArrowRight, Loader2, Check, Droplets, Zap, Trash2, X, Sparkles, ScanSearch, HelpCircle, ShieldCheck, MessageSquare, Phone, Map as MapIcon, Locate, WifiOff, AlertTriangle } from 'lucide-react';
+// import { collection, addDoc, serverTimestamp, setDoc, doc, increment } from 'firebase/firestore';
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// import { db, auth, storage } from '../lib/firebase';
+// import { cn } from '../lib/utils';
+// import { GoogleGenAI } from "@google/genai";
+// import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+// import L from 'leaflet';
+// import 'leaflet/dist/leaflet.css';
+
+// import markerIcon from 'leaflet/dist/images/marker-icon.png';
+// import markerIconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+// import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// const DefaultIcon = L.icon({ iconUrl: markerIcon, iconRetinaUrl: markerIconRetina, shadowUrl: markerShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
+// L.Marker.prototype.options.icon = DefaultIcon;
+
+// const STEPS = [
+//   { id: 1, title: 'الوسائط' },
+//   { id: 2, title: 'التفاصيل' },
+//   { id: 3, title: 'المراجعة' },
+// ];
+
+// const CATEGORIES = [
+//   { id: 'road', label: 'طرق', icon: <MapPin size={20} />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+//   { id: 'water', label: 'مياه', icon: <Droplets size={20} />, color: 'text-blue-600', bg: 'bg-blue-50' },
+//   { id: 'electricity', label: 'كهرباء', icon: <Zap size={20} />, color: 'text-amber-600', bg: 'bg-amber-50' },
+//   { id: 'waste', label: 'نفايات', icon: <Trash2 size={20} />, color: 'text-rose-600', bg: 'bg-rose-50' },
+//   { id: 'other', label: 'عام', icon: <HelpCircle size={20} />, color: 'text-slate-600', bg: 'bg-slate-50' },
+// ];
+
+// export default function IssueReport({ onComplete }: { onComplete: () => void }) {
+//   const [step, setStep] = useState(1);
+//   const [isRecording, setIsRecording] = useState(false);
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+//   const [uploadProgress, setUploadProgress] = useState(0);
+//   const [recordingDuration, setRecordingDuration] = useState(0);
+//   const recordingTimerRef = useRef<any>(null);
+//   const [issueType, setIssueType] = useState('');
+//   const [interactionType, setInteractionType] = useState<'report' | 'suggestion' | 'inquiry'>('report');
+//   const [description, setDescription] = useState('');
+//   const [manualAddress, setManualAddress] = useState('الرياض، الخرطوم');
+//   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number }>({ lat: 15.5007, lng: 32.5599 });
+//   const [addressLoading, setAddressLoading] = useState(false);
+//   const [severity, setSeverity] = useState<1 | 2 | 3>(2);
+//   const [damageType, setDamageType] = useState('');
+//   const [notes, setNotes] = useState('');
+//   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+//   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+//   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+//   const audioChunksRef = useRef<Blob[]>([]);
+//   const [isAnalyzing, setIsAnalyzing] = useState(false);
+//   const [showOfflineOptions, setShowOfflineOptions] = useState(false);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+//   const [trackingId] = useState(() => {
+//     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+//     let result = 'BN-';
+//     for (let i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+//     return result;
+//   });
+//   const [showConfirmation, setShowConfirmation] = useState(false);
+//   const [errors, setErrors] = useState<Record<string, string>>({});
+//   const [isTranscribing, setIsTranscribing] = useState(false);
+//   const transcriptionRecorderRef = useRef<MediaRecorder | null>(null);
+//   const transcriptionChunksRef = useRef<Blob[]>([]);
+
+//   const startTranscriptionRecording = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+//       const mediaRecorder = new MediaRecorder(stream);
+//       transcriptionRecorderRef.current = mediaRecorder;
+//       transcriptionChunksRef.current = [];
+//       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) transcriptionChunksRef.current.push(e.data); };
+//       mediaRecorder.onstop = async () => { const blob = new Blob(transcriptionChunksRef.current, { type: 'audio/webm' }); await transcribeAudio(blob); stream.getTracks().forEach(track => track.stop()); };
+//       mediaRecorder.start();
+//       setIsTranscribing(true);
+//     } catch (err) { console.error("Microphone access denied for transcription:", err); }
+//   };
+
+//   const stopTranscriptionRecording = () => {
+//     if (transcriptionRecorderRef.current && transcriptionRecorderRef.current.state === 'recording') {
+//       transcriptionRecorderRef.current.stop();
+//       setIsTranscribing(false);
+//     }
+//   };
+
+//   const transcribeAudio = async (blob: Blob) => {
+//     setIsTranscribing(true);
+//     try {
+//       const reader = new FileReader();
+//       reader.readAsDataURL(blob);
+//       reader.onloadend = async () => {
+//         const base64Audio = (reader.result as string).split(',')[1];
+//         try {
+//           const response = await ai.models.generateContent({
+//             model: "gemini-3-flash-preview",
+//             contents: [{ parts: [{ text: "Transcribe this audio recording of a Sudanese citizen describing an infrastructure issue. The user is likely speaking in Sudanese Arabic (Ammiya). Provide ONLY the transcription text, nothing else. Focus on accuracy of the technical details mentioned. If the audio is unclear, return an empty string." }, { inlineData: { mimeType: "audio/webm", data: base64Audio } }] }]
+//           });
+//           const text = response.text || "";
+//           if (text && text.trim().length > 0) setDescription(prev => prev ? `${prev} ${text.trim()}`.trim() : text.trim());
+//         } catch (genError) { console.error("Gemini Transcription API error:", genError); }
+//         finally { setIsTranscribing(false); }
+//       };
+//     } catch (error) { console.error("Transcription process error:", error); setIsTranscribing(false); }
+//   };
+
+//   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+
+//   const sendViaSMS = () => {
+//     const message = `Type: ${issueType || 'other'} Desc: ${description} Loc: ${manualAddress}`;
+//     window.location.href = `sms:7722?body=${encodeURIComponent(message)}`;
+//   };
+
+//   const reverseGeocode = async (lat: number, lng: number) => {
+//     setAddressLoading(true);
+//     try {
+//       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar,en&addressdetails=1`);
+//       const data = await response.json();
+//       if (data && data.display_name) {
+//         const addr = data.address;
+//         const shortAddress = [addr.road || addr.pedestrian || addr.suburb || '', addr.neighbourhood || addr.city_district || '', addr.city || addr.town || addr.village || ''].filter(Boolean).join('، ') || data.display_name;
+//         setManualAddress(shortAddress);
+//       }
+//     } catch (error) { console.error("Geocoding error:", error); }
+//     finally { setAddressLoading(false); }
+//   };
+
+//   useEffect(() => { if (currentCoords) reverseGeocode(currentCoords.lat, currentCoords.lng); }, []);
+
+//   function MapController({ coords }: { coords: { lat: number, lng: number } | null }) {
+//     const map = useMap();
+//     useEffect(() => { if (coords) map.flyTo([coords.lat, coords.lng], map.getZoom(), { duration: 1.5, easeLinearity: 0.25 }); }, [coords, map]);
+//     return null;
+//   }
+
+//   function MapEvents() {
+//     useMapEvents({
+//       click(e) { const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; setCurrentCoords(newCoords); reverseGeocode(newCoords.lat, newCoords.lng); }
+//     });
+//     return null;
+//   }
+
+//   const analyzeImage = async (base64Data: string) => {
+//     setIsAnalyzing(true);
+//     try {
+//       const response = await ai.models.generateContent({
+//         model: "gemini-3.1-pro-preview",
+//         contents: [{ parts: [{ text: "Analyze this image of a Sudanese infrastructure problem. Determine the issue type (road, water, electricity, waste, or other) and provide a concise description in Sudanese Arabic (Ammiya). Also, assess the visual cues to determine a potential severity level for this issue (1 for normal/low concern, 2 for significant/important, 3 for urgent/dangerous). Return the result strictly in JSON format with keys 'type', 'description', and 'severity' (integer 1-3)." }, { inlineData: { mimeType: "image/jpeg", data: base64Data.split(',')[1] } }] }],
+//         config: { responseMimeType: "application/json" }
+//       });
+//       const result = JSON.parse(response.text || '{}');
+//       if (result.type) setIssueType(result.type);
+//       if (result.description) setDescription(result.description);
+//       if (result.severity && [1, 2, 3].includes(result.severity)) setSeverity(result.severity as any);
+//     } catch (error) { console.error("Gemini analysis failed:", error); }
+//     finally { setIsAnalyzing(false); }
+//   };
+
+//   const handleImageUpload = (img: string) => { setAttachedImages(prev => [...prev, img]); if (attachedImages.length === 0) analyzeImage(img); };
+
+//   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = e.target.files;
+//     if (!files || files.length === 0) return;
+//     Array.from(files).forEach((file: File) => { const reader = new FileReader(); reader.onload = (event) => handleImageUpload(event.target?.result as string); reader.readAsDataURL(file); });
+//     if (fileInputRef.current) fileInputRef.current.value = '';
+//   };
+
+//   const startRecording = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+//       const mediaRecorder = new MediaRecorder(stream);
+//       mediaRecorderRef.current = mediaRecorder;
+//       audioChunksRef.current = [];
+//       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+//       mediaRecorder.onstop = () => { setAudioBlob(new Blob(audioChunksRef.current, { type: 'audio/webm' })); stream.getTracks().forEach(track => track.stop()); };
+//       mediaRecorder.start();
+//       setIsRecording(true);
+//       setRecordingDuration(0);
+//       recordingTimerRef.current = setInterval(() => setRecordingDuration(prev => prev + 1), 1000);
+//     } catch (err) { console.error("Microphone access denied:", err); }
+//   };
+
+//   const stopRecording = () => {
+//     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+//       mediaRecorderRef.current.stop();
+//       setIsRecording(false);
+//       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+//     }
+//   };
+
+//   const toggleRecording = () => isRecording ? stopRecording() : startRecording();
+
+//   const formatDuration = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+
+//   const handleSubmit = async () => {
+//     if (!auth.currentUser) return;
+//     setIsSubmitting(true);
+//     try {
+//       setUploadProgress(10);
+//       let audioUrl = '';
+//       if (audioBlob) {
+//         const audioRef = ref(storage, `audio/${auth.currentUser.uid}_${Date.now()}.webm`);
+//         await uploadBytes(audioRef, audioBlob);
+//         audioUrl = await getDownloadURL(audioRef);
+//         setUploadProgress(30);
+//       }
+//       const location = { lat: currentCoords?.lat || 15.5007, lng: currentCoords?.lng || 32.5599, address: manualAddress || "الرياض، الخرطوم" };
+//       const docData = { trackingId, type: issueType.toLowerCase() || 'other', interactionType, description, notes, location, severity, mediaUrls: attachedImages, voiceUrl: audioUrl, status: 'pending', currentStage: 'detected', reportCount: 1, anonymous: true, reporterId: auth.currentUser.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), regionId: 'khartoum', citizenSignOff: false, reportedByCitizen: true };
+//       const docRef = await addDoc(collection(db, 'issues'), docData);
+//       setUploadProgress(100);
+//       await setDoc(doc(db, 'users', auth.currentUser.uid), { points: increment(100), uid: auth.currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
+//       await addDoc(collection(db, 'issues', docRef.id, 'movements'), { status: 'رصد البلاغ', description: `تم استلام البلاغ في النظام وتوليد رقم المتابعة: ${trackingId}.`, institutionName: 'عمران | مركز التحكم الرقمي', timestamp: serverTimestamp(), stage: 'detected' });
+//       onComplete();
+//     } catch (error) { console.error("Error submitting issue:", error); }
+//     finally { setIsSubmitting(false); }
+//   };
+
+//   const nextStep = () => {
+//     const stepErrors: Record<string, string> = {};
+//     if (step === 1) {
+//       if (attachedImages.length === 0 && !audioBlob) stepErrors.media = 'يرجى إرفاق صورة أو تسجيل إفادة صوتية.';
+//       if (!manualAddress || manualAddress.trim() === '' || manualAddress === 'جاري التحديد...') stepErrors.location = 'يرجى تحديد موقع البلاغ على الخريطة.';
+//     } else if (step === 2) {
+//       if (!issueType) stepErrors.issueType = 'يرجى اختيار نوع المشكلة.';
+//       if (!description || description.trim().length < 10) stepErrors.description = 'يرجى إدخال وصف لا يقل عن ١٠ أحرف.';
+//     }
+//     if (Object.keys(stepErrors).length > 0) { setErrors(stepErrors); return; }
+//     setErrors({});
+//     setStep(s => Math.min(s + 1, 3));
+//   };
+
+//   const prevStep = () => { setErrors({}); setStep(s => Math.max(s - 1, 1)); };
+
+//   const selectedCategory = CATEGORIES.find(c => c.id === issueType);
+
+//   return (
+//     <div className="h-full flex flex-col bg-white" dir="rtl">
+//       {/* Step Progress Bar */}
+//       <div className="px-4 pt-4 pb-2 bg-white border-b border-slate-100">
+//         <div className="flex items-center gap-2">
+//           {STEPS.map((s, idx) => (
+//             <React.Fragment key={s.id}>
+//               <div className="flex items-center gap-1.5">
+//                 <div className={cn(
+//                   "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300",
+//                   step === s.id ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" :
+//                   step > s.id ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+//                 )}>
+//                   {step > s.id ? <Check size={12} strokeWidth={3} /> : s.id}
+//                 </div>
+//                 <span className={cn("text-xs font-medium hidden sm:block transition-colors", step === s.id ? "text-slate-800 font-bold" : "text-slate-400")}>{s.title}</span>
+//               </div>
+//               {idx < STEPS.length - 1 && (
+//                 <div className="flex-1 h-px bg-slate-100 relative overflow-hidden">
+//                   <div className={cn("absolute inset-y-0 right-0 bg-emerald-400 transition-all duration-500", step > s.id ? "left-0" : "left-full")} />
+//                 </div>
+//               )}
+//             </React.Fragment>
+//           ))}
+//         </div>
+//       </div>
+
+//       {/* Scrollable Content */}
+//       <div className="flex-1 overflow-y-auto">
+//         <AnimatePresence mode="wait">
+//           {/* STEP 1 */}
+//           {step === 1 && !showOfflineOptions && (
+//             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-5">
+//               <div className="text-right">
+//                 <h2 className="text-xl font-black text-slate-900">توثيق البلاغ</h2>
+//                 <p className="text-sm text-slate-400 mt-0.5">أضف صورة أو تسجيل صوتي وحدد الموقع</p>
+//               </div>
+
+//               {/* Media Upload */}
+//               <div className="grid grid-cols-2 gap-3">
+//                 <input type="file" ref={fileInputRef} accept="image/*" multiple capture="environment" className="hidden" onChange={handleCapture} />
+                
+//                 {/* Camera Button */}
+//                 <button disabled={isAnalyzing} onClick={() => fileInputRef.current?.click()}
+//                   className={cn("aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all active:scale-95",
+//                     errors.media && attachedImages.length === 0 && !audioBlob ? "border-rose-300 bg-rose-50" :
+//                     attachedImages.length > 0 ? "border-emerald-300 bg-emerald-50" : "border-dashed border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50"
+//                   )}
+//                 >
+//                   {isAnalyzing ? (
+//                     <><Loader2 className="animate-spin text-emerald-500" size={24} /><span className="text-[10px] text-emerald-600 font-bold">جاري التحليل...</span></>
+//                   ) : (
+//                     <>
+//                       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", attachedImages.length > 0 ? "bg-emerald-500 text-white" : "bg-white text-slate-400 shadow-sm")}>
+//                         <Camera size={20} />
+//                       </div>
+//                       <span className="text-xs font-bold text-slate-700">الكاميرا</span>
+//                       {attachedImages.length > 0 && <span className="text-[10px] text-emerald-600 font-bold">{attachedImages.length} صور</span>}
+//                     </>
+//                   )}
+//                 </button>
+
+//                 {/* Audio Button */}
+//                 <button onClick={toggleRecording}
+//                   className={cn("aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all active:scale-95",
+//                     isRecording ? "border-rose-400 bg-rose-50" :
+//                     audioBlob ? "border-emerald-300 bg-emerald-50" : "border-dashed border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50"
+//                   )}
+//                 >
+//                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center relative", isRecording ? "bg-rose-500 text-white" : audioBlob ? "bg-emerald-500 text-white" : "bg-white text-slate-400 shadow-sm")}>
+//                     {audioBlob && !isRecording ? <Check size={20} /> : <Mic size={20} />}
+//                     {isRecording && <div className="absolute inset-0 bg-rose-400 rounded-xl animate-ping opacity-30" />}
+//                   </div>
+//                   <span className={cn("text-xs font-bold", isRecording ? "text-rose-600" : audioBlob ? "text-emerald-600" : "text-slate-700")}>
+//                     {isRecording ? formatDuration(recordingDuration) : audioBlob ? 'مُسجَّل' : 'صوتي'}
+//                   </span>
+//                 </button>
+//               </div>
+
+//               {/* Error */}
+//               {errors.media && <p className="text-rose-500 text-xs font-medium text-right">{errors.media}</p>}
+
+//               {/* Image Preview Strip */}
+//               {attachedImages.length > 0 && (
+//                 <div className="flex gap-2 overflow-x-auto pb-1">
+//                   {attachedImages.map((img, idx) => (
+//                     <div key={idx} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden group">
+//                       <img src={img} alt="Preview" className="w-full h-full object-cover" />
+//                       <button onClick={() => setAttachedImages(prev => prev.filter((_, i) => i !== idx))}
+//                         className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+//                         <X size={14} className="text-white" />
+//                       </button>
+//                     </div>
+//                   ))}
+//                 </div>
+//               )}
+
+//               {/* Map */}
+//               <div className="space-y-2">
+//                 <div className="flex items-center justify-between">
+//                   <button onClick={() => { if (navigator.geolocation) navigator.geolocation.getCurrentPosition((pos) => { const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }; setCurrentCoords(c); reverseGeocode(c.lat, c.lng); }); }}
+//                     className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold px-3 py-1.5 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-all active:scale-95">
+//                     <Locate size={13} /> موقعي الحالي
+//                   </button>
+//                   <span className="text-xs font-bold text-slate-500">الموقع</span>
+//                 </div>
+
+//                 <div className={cn("rounded-2xl overflow-hidden border-2 h-48 relative", errors.location ? "border-rose-300" : "border-slate-100")}>
+//                   <MapContainer center={[currentCoords.lat, currentCoords.lng]} zoom={13} className="w-full h-full z-0" scrollWheelZoom={true}>
+//                     <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+//                     <MapController coords={currentCoords} />
+//                     <MapEvents />
+//                     <Marker position={[currentCoords.lat, currentCoords.lng]} />
+//                   </MapContainer>
+//                 </div>
+
+//                 <div className={cn("flex items-center gap-3 p-3 bg-slate-50 rounded-xl border", errors.location ? "border-rose-200" : "border-slate-100")}>
+//                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", errors.location ? "bg-rose-500 text-white" : "bg-emerald-500 text-white")}>
+//                     {addressLoading ? <Loader2 size={14} className="animate-spin" /> : <MapPin size={14} />}
+//                   </div>
+//                   <input type="text" value={addressLoading ? "جاري التحديد..." : manualAddress} onChange={(e) => setManualAddress(e.target.value)}
+//                     disabled={addressLoading} placeholder="أدخل العنوان..."
+//                     className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none text-right" />
+//                 </div>
+//                 {errors.location && <p className="text-rose-500 text-xs font-medium text-right">{errors.location}</p>}
+//               </div>
+//             </motion.div>
+//           )}
+
+//           {/* STEP 2 */}
+//           {step === 2 && (
+//             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-5">
+//               <div className="text-right">
+//                 <h2 className="text-xl font-black text-slate-900">تفاصيل المشكلة</h2>
+//                 <p className="text-sm text-slate-400 mt-0.5">حدد النوع وأضف وصفاً واضحاً</p>
+//               </div>
+
+//               {/* Interaction Type Tabs */}
+//               <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+//                 {[{ id: 'report', label: 'بلاغ' }, { id: 'suggestion', label: 'مقترح' }, { id: 'inquiry', label: 'استفسار' }].map(tab => (
+//                   <button key={tab.id} onClick={() => setInteractionType(tab.id as any)}
+//                     className={cn("flex-1 py-2 rounded-lg text-xs font-bold transition-all", interactionType === tab.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
+//                     {tab.label}
+//                   </button>
+//                 ))}
+//               </div>
+
+//               {/* Categories */}
+//               <div className="space-y-2">
+//                 <p className="text-xs font-bold text-slate-500 text-right">نوع المشكلة</p>
+//                 <div className={cn("grid grid-cols-5 gap-2 p-2 rounded-2xl", errors.issueType ? "bg-rose-50 border border-rose-200" : "")}>
+//                   {CATEGORIES.map(cat => (
+//                     <button key={cat.id}
+//                       onClick={() => { setIssueType(cat.id); setErrors(prev => { const n = { ...prev }; delete n.issueType; return n; }); }}
+//                       className={cn("flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all active:scale-95",
+//                         issueType === cat.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-transparent bg-white hover:border-slate-200"
+//                       )}
+//                     >
+//                       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", issueType === cat.id ? "bg-emerald-500 text-white" : `${cat.bg} ${cat.color}`)}>
+//                         {React.cloneElement(cat.icon as any, { size: 16 })}
+//                       </div>
+//                       <span className={cn("text-[10px] font-bold", issueType === cat.id ? "text-emerald-700" : "text-slate-600")}>{cat.label}</span>
+//                     </button>
+//                   ))}
+//                 </div>
+//                 {errors.issueType && <p className="text-rose-500 text-xs font-medium text-right">{errors.issueType}</p>}
+//               </div>
+
+//               {/* Description */}
+//               <div className="space-y-2">
+//                 <div className="flex items-center justify-between">
+//                   <button type="button" onClick={isTranscribing ? stopTranscriptionRecording : startTranscriptionRecording}
+//                     className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", isTranscribing ? "bg-rose-100 text-rose-600 animate-pulse" : "bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600")}>
+//                     {isTranscribing ? <Loader2 size={12} className="animate-spin" /> : <Mic size={12} />}
+//                     {isTranscribing ? 'إيقاف' : 'نص صوتي'}
+//                   </button>
+//                   <p className="text-xs font-bold text-slate-500">الوصف</p>
+//                 </div>
+//                 <textarea rows={4} placeholder="اوصف المشكلة بوضوح..."
+//                   className={cn("w-full px-4 py-3 rounded-2xl border-2 bg-slate-50 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all text-right resize-none",
+//                     errors.description ? "border-rose-300 bg-rose-50" : "border-slate-100"
+//                   )}
+//                   value={description}
+//                   onChange={(e) => { setDescription(e.target.value); if (errors.description && e.target.value.length >= 10) setErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }}
+//                 />
+//                 {errors.description && <p className="text-rose-500 text-xs font-medium text-right">{errors.description}</p>}
+//               </div>
+
+//               {/* Severity */}
+//               <div className="space-y-2">
+//                 <p className="text-xs font-bold text-slate-500 text-right">درجة الخطورة</p>
+//                 <div className="grid grid-cols-3 gap-2">
+//                   {[{ v: 1, label: 'عادي', color: 'emerald' }, { v: 2, label: 'مهم', color: 'amber' }, { v: 3, label: 'عاجل', color: 'rose' }].map(s => (
+//                     <button key={s.v} onClick={() => setSeverity(s.v as any)}
+//                       className={cn("py-2.5 rounded-xl text-xs font-bold border-2 transition-all",
+//                         severity === s.v ? (s.color === 'emerald' ? "bg-emerald-500 border-emerald-400 text-white shadow-sm" : s.color === 'amber' ? "bg-amber-500 border-amber-400 text-white shadow-sm" : "bg-rose-500 border-rose-400 text-white shadow-sm") : "bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300"
+//                       )}
+//                     >
+//                       {s.label}
+//                     </button>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               {/* Optional fields */}
+//               <div className="space-y-3">
+//                 <p className="text-xs font-bold text-slate-400 text-right">تفاصيل إضافية (اختياري)</p>
+//                 <input type="text" placeholder="نوع الضرر — مثلاً: حفرة، تسرب مياه..."
+//                   className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all text-right"
+//                   value={damageType} onChange={(e) => setDamageType(e.target.value)} />
+//                 <textarea rows={2} placeholder="ملاحظات إضافية..."
+//                   className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all text-right resize-none"
+//                   value={notes} onChange={(e) => setNotes(e.target.value)} />
+//               </div>
+//             </motion.div>
+//           )}
+
+//           {/* STEP 3 - Review */}
+//           {step === 3 && (
+//             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4 pb-8">
+//               <div className="text-right">
+//                 <h2 className="text-xl font-black text-slate-900">مراجعة ونشر</h2>
+//                 <p className="text-sm text-slate-400 mt-0.5">راجع البيانات قبل الإرسال</p>
+//               </div>
+
+//               {/* Tracking ID */}
+//               <div className="bg-emerald-600 rounded-2xl p-4 flex items-center justify-between">
+//                 <ShieldCheck size={24} className="text-emerald-200" />
+//                 <div className="text-right">
+//                   <p className="text-emerald-200 text-xs font-bold">رقم المتابعة</p>
+//                   <p className="text-white font-black font-mono text-lg tracking-wider">{trackingId}</p>
+//                 </div>
+//               </div>
+
+//               {/* Summary Card */}
+//               <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+//                 {attachedImages.length > 0 && (
+//                   <div className="h-36 overflow-hidden">
+//                     <img src={attachedImages[0]} className="w-full h-full object-cover" />
+//                   </div>
+//                 )}
+//                 <div className="p-4 space-y-3">
+//                   <div className="flex items-center justify-between">
+//                     {selectedCategory && (
+//                       <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold", selectedCategory.bg, selectedCategory.color)}>
+//                         {React.cloneElement(selectedCategory.icon as any, { size: 12 })}
+//                         {selectedCategory.label}
+//                       </div>
+//                     )}
+//                     <div className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", severity === 3 ? "bg-rose-50 text-rose-600" : severity === 2 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
+//                       {severity === 3 ? '🔴 عاجل' : severity === 2 ? '🟡 مهم' : '🟢 عادي'}
+//                     </div>
+//                   </div>
+
+//                   <p className="text-sm font-medium text-slate-700 text-right leading-relaxed">{description || 'لا يوجد وصف.'}</p>
+
+//                   <div className="flex items-center gap-2 pt-1 border-t border-slate-50">
+//                     <span className="text-xs text-slate-500 truncate flex-1 text-right">{manualAddress}</span>
+//                     <MapPin size={12} className="text-emerald-500 shrink-0" />
+//                   </div>
+
+//                   {attachedImages.length > 1 && (
+//                     <div className="flex gap-1.5">
+//                       {attachedImages.slice(1, 4).map((img, i) => (
+//                         <div key={i} className="w-12 h-12 rounded-xl overflow-hidden">
+//                           <img src={img} className="w-full h-full object-cover" />
+//                         </div>
+//                       ))}
+//                       {attachedImages.length > 4 && <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">+{attachedImages.length - 4}</div>}
+//                     </div>
+//                   )}
+
+//                   {audioBlob && (
+//                     <div className="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
+//                       <Mic size={14} className="text-emerald-500" />
+//                       <span className="text-xs font-bold text-emerald-700">إفادة صوتية مرفقة</span>
+//                     </div>
+//                   )}
+
+//                   {(damageType || notes) && (
+//                     <div className="pt-2 border-t border-slate-50 space-y-1.5 text-right">
+//                       {damageType && <p className="text-xs text-slate-500"><span className="font-bold">نوع الضرر:</span> {damageType}</p>}
+//                       {notes && <p className="text-xs text-slate-500"><span className="font-bold">ملاحظات:</span> {notes}</p>}
+//                     </div>
+//                   )}
+//                 </div>
+//               </div>
+//             </motion.div>
+//           )}
+
+//           {/* Offline Mode */}
+//           {showOfflineOptions && (
+//             <motion.div key="offline" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-4">
+//               <div className="text-right">
+//                 <h2 className="text-xl font-black text-slate-900">إرسال بدون إنترنت</h2>
+//                 <p className="text-sm text-slate-400 mt-0.5">استخدم SMS أو USSD لرفع البلاغ</p>
+//               </div>
+
+//               <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-right">
+//                 <p className="text-[10px] text-slate-400 font-bold mb-1">مسودة البلاغ:</p>
+//                 <p className="text-xs font-mono text-slate-700">{`بلاغ: ${issueType || '[نوع]'} في ${manualAddress || '[الموقع]'} - ${description || '[التفاصيل]'}`}</p>
+//               </div>
+
+//               <button onClick={sendViaSMS} className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all active:scale-95 shadow-md">
+//                 <MessageSquare size={16} /> إرسال عبر SMS إلى 7722
+//               </button>
+
+//               <div className="text-center p-4 bg-white rounded-2xl border border-slate-100">
+//                 <p className="text-xs text-slate-500 font-medium mb-1">أو اطلب الكود التفاعلي</p>
+//                 <p className="text-2xl font-black text-amber-600 font-mono">*772#</p>
+//                 <p className="text-[10px] text-slate-400 mt-1">مجاني — زين · MTN · سوداني</p>
+//               </div>
+
+//               <button onClick={() => setShowOfflineOptions(false)} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-sm text-slate-400 font-bold hover:border-emerald-400 hover:text-emerald-500 transition-all">
+//                 العودة للتطبيق
+//               </button>
+//             </motion.div>
+//           )}
+//         </AnimatePresence>
+//       </div>
+
+//       {/* Bottom Navigation */}
+//       {!showOfflineOptions && (
+//         <div className="p-4 bg-white border-t border-slate-100 space-y-2 safe-area-pb">
+//           <div className="flex gap-2">
+//             {step > 1 && (
+//               <button onClick={prevStep} className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all active:scale-90 shrink-0">
+//                 <ArrowRight size={18} strokeWidth={2.5} className="rotate-180" />
+//               </button>
+//             )}
+//             <button onClick={step === 3 ? () => setShowConfirmation(true) : nextStep} disabled={isSubmitting}
+//               className="flex-1 h-12 bg-emerald-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all disabled:opacity-50 active:scale-95 shadow-md shadow-emerald-200"
+//             >
+//               {isSubmitting ? (
+//                 <><Loader2 size={16} className="animate-spin" /> جاري الإرسال... {uploadProgress}%</>
+//               ) : step === 3 ? (
+//                 <><Send size={16} /> إرسال البلاغ</>
+//               ) : (
+//                 <>التالي <ArrowRight size={16} className="rotate-180" /></>
+//               )}
+//             </button>
+//           </div>
+//           {step === 1 && (
+//             <button onClick={() => setShowOfflineOptions(true)} className="w-full text-center text-[11px] text-slate-400 hover:text-emerald-600 transition-colors font-medium py-1">
+//               لا يوجد اتصال؟ استخدم SMS / USSD
+//             </button>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Confirmation Modal */}
+//       <AnimatePresence>
+//         {showConfirmation && (
+//           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+//             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+//               className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowConfirmation(false)} />
+//             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+//               className="relative w-full max-w-sm bg-white rounded-3xl p-6 space-y-5 shadow-2xl"
+//               onClick={e => e.stopPropagation()}
+//             >
+//               <div className="flex justify-center">
+//                 <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center">
+//                   <ShieldCheck size={28} className="text-emerald-500" />
+//                 </div>
+//               </div>
+//               <div className="text-center space-y-2">
+//                 <h3 className="text-lg font-black text-slate-900">تأكيد إرسال البلاغ</h3>
+//                 <p className="text-sm text-slate-500 font-medium">هل راجعت جميع البيانات؟ سيُرسَل البلاغ فوراً إلى الجهات المختصة.</p>
+//               </div>
+//               <div className="space-y-2">
+//                 <button onClick={handleSubmit} className="w-full py-3.5 bg-emerald-600 text-white font-bold rounded-2xl text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 active:scale-95">
+//                   <Check size={16} /> نعم، اعتماد وإرسال
+//                 </button>
+//                 <button onClick={() => setShowConfirmation(false)} className="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-2xl text-sm hover:bg-slate-200 transition-all">
+//                   مراجعة مجدداً
+//                 </button>
+//               </div>
+//             </motion.div>
+//           </div>
+//         )}
+//       </AnimatePresence>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, Mic, MapPin, Send, ArrowRight, Loader2, Check, Droplets, Zap, Trash2, X, Sparkles, ScanSearch, HelpCircle, ShieldCheck, MessageSquare, Phone, Map as MapIcon, Locate, WifiOff, AlertTriangle } from 'lucide-react';
@@ -1226,6 +1859,7 @@ const CATEGORIES = [
 ];
 
 export default function IssueReport({ onComplete }: { onComplete: () => void }) {
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1256,9 +1890,24 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
   });
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [aiError, setAiError] = useState<{ type: 'quota' | 'network' | 'general'; message: string } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const transcriptionRecorderRef = useRef<MediaRecorder | null>(null);
   const transcriptionChunksRef = useRef<Blob[]>([]);
+
+  const parseAiError = (error: any): { type: 'quota' | 'network' | 'general'; message: string } => {
+    const msg = error?.message || '';
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+      return { type: 'quota', message: 'تجاوزنا الحد اليومي لتحليل الصور بالذكاء الاصطناعي. يمكنك إكمال البلاغ يدوياً بكتابة الوصف واختيار النوع.' };
+    }
+    if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
+      return { type: 'general', message: 'خدمة الذكاء الاصطناعي غير مفعّلة حالياً. يمكنك إكمال البلاغ يدوياً.' };
+    }
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
+      return { type: 'network', message: 'تعذّر الاتصال بخدمة التحليل. تحقق من الإنترنت أو أكمل البلاغ يدوياً.' };
+    }
+    return { type: 'general', message: 'تعذّر التحليل التلقائي. يمكنك إكمال البلاغ يدوياً بكتابة الوصف.' };
+  };
 
   const startTranscriptionRecording = async () => {
     try {
@@ -1294,7 +1943,10 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
           });
           const text = response.text || "";
           if (text && text.trim().length > 0) setDescription(prev => prev ? `${prev} ${text.trim()}`.trim() : text.trim());
-        } catch (genError) { console.error("Gemini Transcription API error:", genError); }
+        } catch (genError) {
+          console.error("Gemini Transcription API error:", genError);
+          setAiError(parseAiError(genError));
+        }
         finally { setIsTranscribing(false); }
       };
     } catch (error) { console.error("Transcription process error:", error); setIsTranscribing(false); }
@@ -1338,9 +1990,10 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
 
   const analyzeImage = async (base64Data: string) => {
     setIsAnalyzing(true);
+    setAiError(null);
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: "Analyze this image of a Sudanese infrastructure problem. Determine the issue type (road, water, electricity, waste, or other) and provide a concise description in Sudanese Arabic (Ammiya). Also, assess the visual cues to determine a potential severity level for this issue (1 for normal/low concern, 2 for significant/important, 3 for urgent/dangerous). Return the result strictly in JSON format with keys 'type', 'description', and 'severity' (integer 1-3)." }, { inlineData: { mimeType: "image/jpeg", data: base64Data.split(',')[1] } }] }],
         config: { responseMimeType: "application/json" }
       });
@@ -1348,8 +2001,10 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
       if (result.type) setIssueType(result.type);
       if (result.description) setDescription(result.description);
       if (result.severity && [1, 2, 3].includes(result.severity)) setSeverity(result.severity as any);
-    } catch (error) { console.error("Gemini analysis failed:", error); }
-    finally { setIsAnalyzing(false); }
+    } catch (error) {
+      console.error("Gemini analysis failed:", error);
+      setAiError(parseAiError(error));
+    } finally { setIsAnalyzing(false); }
   };
 
   const handleImageUpload = (img: string) => { setAttachedImages(prev => [...prev, img]); if (attachedImages.length === 0) analyzeImage(img); };
@@ -1388,28 +2043,138 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
 
   const formatDuration = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 
+  // const handleSubmit = async () => {
+  //   console.log('hi mohammed');
+    
+  //   if (!auth.currentUser) return;
+  //   setIsSubmitting(true);
+  //   try {
+  //     setUploadProgress(10);
+  //     let audioUrl = '';
+  //     if (audioBlob) {
+  //       const audioRef = ref(storage, `audio/${auth.currentUser.uid}_${Date.now()}.webm`);
+  //       await uploadBytes(audioRef, audioBlob);
+  //       audioUrl = await getDownloadURL(audioRef);
+  //       setUploadProgress(30);
+  //     }
+  //     const location = { lat: currentCoords?.lat || 15.5007, lng: currentCoords?.lng || 32.5599, address: manualAddress || "الرياض، الخرطوم" };
+  //     const docData = { trackingId, type: issueType.toLowerCase() || 'other', interactionType, description, notes, location, severity, mediaUrls: attachedImages, voiceUrl: audioUrl, status: 'pending', currentStage: 'detected', reportCount: 1, anonymous: true, reporterId: auth.currentUser.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), regionId: 'khartoum', citizenSignOff: false, reportedByCitizen: true };
+  //     const docRef = await addDoc(collection(db, 'issues'), docData);
+  //     setUploadProgress(100);
+  //     await setDoc(doc(db, 'users', auth.currentUser.uid), { points: increment(100), uid: auth.currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
+  //     await addDoc(collection(db, 'issues', docRef.id, 'movements'), { status: 'رصد البلاغ', description: `تم استلام البلاغ في النظام وتوليد رقم المتابعة: ${trackingId}.`, institutionName: 'عمران | مركز التحكم الرقمي', timestamp: serverTimestamp(), stage: 'detected' });
+  //     onComplete();
+  //   } catch (error) { console.error("Error submitting issue:", error); }
+  //   finally { setIsSubmitting(false); }
+  // };
+
   const handleSubmit = async () => {
-    if (!auth.currentUser) return;
-    setIsSubmitting(true);
-    try {
-      setUploadProgress(10);
-      let audioUrl = '';
-      if (audioBlob) {
+  if (!auth.currentUser) return;
+  setIsSubmitting(true);
+  setSubmitError(null); // state جديد تضيفه
+  
+  try {
+    setUploadProgress(10);
+
+    // ── رفع الصوت (اختياري — لو فشل نكمل بدونه) ──
+    let audioUrl = '';
+    if (audioBlob) {
+      try {
         const audioRef = ref(storage, `audio/${auth.currentUser.uid}_${Date.now()}.webm`);
         await uploadBytes(audioRef, audioBlob);
         audioUrl = await getDownloadURL(audioRef);
-        setUploadProgress(30);
+      } catch (audioError) {
+        console.warn("Audio upload failed, continuing without it:", audioError);
+        // نكمل بدون صوت — مش نوقف كل شيء
       }
-      const location = { lat: currentCoords?.lat || 15.5007, lng: currentCoords?.lng || 32.5599, address: manualAddress || "الرياض، الخرطوم" };
-      const docData = { trackingId, type: issueType.toLowerCase() || 'other', interactionType, description, notes, location, severity, mediaUrls: attachedImages, voiceUrl: audioUrl, status: 'pending', currentStage: 'detected', reportCount: 1, anonymous: true, reporterId: auth.currentUser.uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), regionId: 'khartoum', citizenSignOff: false, reportedByCitizen: true };
-      const docRef = await addDoc(collection(db, 'issues'), docData);
-      setUploadProgress(100);
-      await setDoc(doc(db, 'users', auth.currentUser.uid), { points: increment(100), uid: auth.currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
-      await addDoc(collection(db, 'issues', docRef.id, 'movements'), { status: 'رصد البلاغ', description: `تم استلام البلاغ في النظام وتوليد رقم المتابعة: ${trackingId}.`, institutionName: 'عمران | مركز التحكم الرقمي', timestamp: serverTimestamp(), stage: 'detected' });
-      onComplete();
-    } catch (error) { console.error("Error submitting issue:", error); }
-    finally { setIsSubmitting(false); }
-  };
+    }
+    setUploadProgress(30);
+
+    // ── رفع الصور إلى Storage بدل base64 في Firestore ──
+    let mediaUrls: string[] = [];
+    for (const base64Img of attachedImages) {
+      try {
+        const blob = await fetch(base64Img).then(r => r.blob());
+        const imgRef = ref(storage, `images/${auth.currentUser.uid}_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
+        await uploadBytes(imgRef, blob);
+        const url = await getDownloadURL(imgRef);
+        mediaUrls.push(url);
+      } catch (imgError) {
+        console.warn("Image upload failed:", imgError);
+        // نكمل حتى لو صورة واحدة فشلت
+      }
+    }
+    setUploadProgress(60);
+
+    // ── حفظ البلاغ في Firestore ──
+    const location = {
+      lat: currentCoords?.lat || 15.5007,
+      lng: currentCoords?.lng || 32.5599,
+      address: manualAddress || "الرياض، الخرطوم"
+    };
+
+    const docData = {
+      trackingId,
+      type: issueType.toLowerCase() || 'other',
+      interactionType,
+      description,
+      notes,
+      location,
+      severity,
+      mediaUrls,        // ✅ URLs من Storage مش base64
+      voiceUrl: audioUrl,
+      status: 'pending',
+      currentStage: 'detected',
+      reportCount: 1,
+      anonymous: true,
+      reporterId: auth.currentUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      regionId: 'khartoum',
+      citizenSignOff: false,
+      reportedByCitizen: true
+    };
+
+    const docRef = await addDoc(collection(db, 'issues'), docData);
+    setUploadProgress(80);
+
+    // ── تحديث نقاط المستخدم ──
+    await setDoc(
+      doc(db, 'users', auth.currentUser.uid),
+      { points: increment(100), uid: auth.currentUser.uid, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+
+    // ── تسجيل أول حركة ──
+    await addDoc(collection(db, 'issues', docRef.id, 'movements'), {
+      status: 'رصد البلاغ',
+      description: `تم استلام البلاغ وتوليد رقم المتابعة: ${trackingId}.`,
+      institutionName: 'عمران | مركز التحكم الرقمي',
+      timestamp: serverTimestamp(),
+      stage: 'detected'
+    });
+
+    setUploadProgress(100);
+    onComplete();
+
+  } catch (error: any) {
+    console.error("Error submitting issue:", error);
+
+    // ── رسالة خطأ واضحة للمستخدم ──
+    if (error?.code === 'permission-denied' || error?.message?.includes('permissions')) {
+      setSubmitError('ليس لديك صلاحية لإرسال البلاغ. يرجى تسجيل الدخول والمحاولة مجدداً.');
+    } else if (error?.message?.includes('quota') || error?.code === 'resource-exhausted') {
+      setSubmitError('تجاوزنا الحد المسموح مؤقتاً. حاول مجدداً بعد دقائق.');
+    } else {
+      setSubmitError('تعذّر إرسال البلاغ. تحقق من الاتصال وحاول مجدداً.');
+    }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
+
 
   const nextStep = () => {
     const stepErrors: Record<string, string> = {};
@@ -1508,8 +2273,53 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
                 </button>
               </div>
 
-              {/* Error */}
+              {/* Validation Error */}
               {errors.media && <p className="text-rose-500 text-xs font-medium text-right">{errors.media}</p>}
+
+              {/* AI Error Banner */}
+              <AnimatePresence>
+                {aiError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    className={cn(
+                      "rounded-2xl border p-3.5 flex gap-3 items-start text-right",
+                      aiError.type === 'quota'
+                        ? "bg-amber-50 border-amber-200"
+                        : aiError.type === 'network'
+                        ? "bg-slate-50 border-slate-200"
+                        : "bg-rose-50 border-rose-200"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
+                      aiError.type === 'quota' ? "bg-amber-100" : aiError.type === 'network' ? "bg-slate-100" : "bg-rose-100"
+                    )}>
+                      <AlertTriangle size={15} className={
+                        aiError.type === 'quota' ? "text-amber-600" : aiError.type === 'network' ? "text-slate-500" : "text-rose-500"
+                      } />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-xs font-bold mb-0.5",
+                        aiError.type === 'quota' ? "text-amber-700" : aiError.type === 'network' ? "text-slate-700" : "text-rose-700"
+                      )}>
+                        {aiError.type === 'quota' ? 'التحليل التلقائي غير متاح مؤقتاً' : aiError.type === 'network' ? 'تعذّر الاتصال بالخدمة' : 'خطأ في التحليل'}
+                      </p>
+                      <p className={cn("text-[11px] leading-relaxed", aiError.type === 'quota' ? "text-amber-600" : aiError.type === 'network' ? "text-slate-500" : "text-rose-600")}>
+                        {aiError.message}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setAiError(null)}
+                      className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-black/5 text-slate-400 shrink-0 transition-all"
+                    >
+                      <X size={13} />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Image Preview Strip */}
               {attachedImages.length > 0 && (
@@ -1615,6 +2425,27 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
                   onChange={(e) => { setDescription(e.target.value); if (errors.description && e.target.value.length >= 10) setErrors(prev => { const n = { ...prev }; delete n.description; return n; }); }}
                 />
                 {errors.description && <p className="text-rose-500 text-xs font-medium text-right">{errors.description}</p>}
+
+                {/* AI Error in Step 2 (transcription fail) */}
+                <AnimatePresence>
+                  {aiError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={cn(
+                        "rounded-xl border p-3 flex gap-2.5 items-start text-right",
+                        aiError.type === 'quota' ? "bg-amber-50 border-amber-200" : aiError.type === 'network' ? "bg-slate-50 border-slate-200" : "bg-rose-50 border-rose-200"
+                      )}
+                    >
+                      <AlertTriangle size={14} className={cn("shrink-0 mt-0.5", aiError.type === 'quota' ? "text-amber-500" : aiError.type === 'network' ? "text-slate-400" : "text-rose-500")} />
+                      <p className={cn("text-[11px] leading-relaxed flex-1", aiError.type === 'quota' ? "text-amber-700" : aiError.type === 'network' ? "text-slate-600" : "text-rose-600")}>
+                        {aiError.message}
+                      </p>
+                      <button onClick={() => setAiError(null)} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={12} /></button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Severity */}
@@ -1759,6 +2590,14 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
                 <ArrowRight size={18} strokeWidth={2.5} className="rotate-180" />
               </button>
             )}
+
+            {submitError && (
+  <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-100 rounded-xl text-right">
+    <AlertTriangle size={15} className="text-rose-500 shrink-0 mt-0.5" />
+    <p className="text-xs font-medium text-rose-600 leading-relaxed">{submitError}</p>
+  </div>
+)}
+
             <button onClick={step === 3 ? () => setShowConfirmation(true) : nextStep} disabled={isSubmitting}
               className="flex-1 h-12 bg-emerald-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all disabled:opacity-50 active:scale-95 shadow-md shadow-emerald-200"
             >
@@ -1783,6 +2622,7 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
       <AnimatePresence>
         {showConfirmation && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+            
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowConfirmation(false)} />
             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
@@ -1799,7 +2639,7 @@ export default function IssueReport({ onComplete }: { onComplete: () => void }) 
                 <p className="text-sm text-slate-500 font-medium">هل راجعت جميع البيانات؟ سيُرسَل البلاغ فوراً إلى الجهات المختصة.</p>
               </div>
               <div className="space-y-2">
-                <button onClick={handleSubmit} className="w-full py-3.5 bg-emerald-600 text-white font-bold rounded-2xl text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 active:scale-95">
+                <button onClick={() => { handleSubmit(); setShowConfirmation(false)}} className="w-full py-3.5 bg-emerald-600 text-white font-bold rounded-2xl text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 active:scale-95">
                   <Check size={16} /> نعم، اعتماد وإرسال
                 </button>
                 <button onClick={() => setShowConfirmation(false)} className="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-2xl text-sm hover:bg-slate-200 transition-all">
