@@ -818,16 +818,19 @@ import Profile from './components/Profile';
 import InstitutionLogin from './components/InstitutionLogin';
 import NavigationMenu from './components/NavigationMenu';
 import VoiceAssistant from './components/VoiceAssistant';
+import MinistryDashboard from './components/MinistryDashboard';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-type View = 'dashboard' | 'report' | 'campaigns' | 'stats' | 'profile';
+type View = 'dashboard' | 'report' | 'campaigns' | 'stats' | 'profile' | 'ministry';
+
 
 const VIEW_META: Record<View, { label: string; icon: React.ReactNode }> = {
-  dashboard: { label: 'المخطط القومي', icon: <MapIcon size={16} /> },
-  report: { label: 'بلاغ ميداني', icon: <PlusCircle size={16} /> },
-  campaigns: { label: 'الحملات الميدانية', icon: <Users size={16} /> },
-  stats: { label: 'التحليلات', icon: <Activity size={16} /> },
-  profile: { label: 'ملفي الشخصي', icon: <UserIcon size={16} /> },
+  dashboard:  { label: 'المخطط القومي',    icon: <MapIcon size={16} /> },
+  report:     { label: 'بلاغ ميداني',      icon: <PlusCircle size={16} /> },
+  campaigns:  { label: 'الحملات الميدانية', icon: <Users size={16} /> },
+  stats:      { label: 'التحليلات',         icon: <Activity size={16} /> },
+  profile:    { label: 'ملفي الشخصي',      icon: <UserIcon size={16} /> },
+  ministry:   { label: 'لوحة الوزارة',     icon: <Shield size={16} /> },
 };
 
 export default function App() {
@@ -1055,6 +1058,13 @@ function AppContent() {
             <SidebarButton active={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')} icon={<MapIcon size={18} />} label="المخطط القومي" />
             <SidebarButton active={activeView === 'campaigns'} onClick={() => setActiveView('campaigns')} icon={<Users size={18} />} label="الحملات الميدانية" />
             <SidebarButton active={activeView === 'stats'} onClick={() => setActiveView('stats')} icon={<Activity size={18} />} label="التحليلات الجغرافية" />
+    <SidebarButton
+      active={activeView === 'ministry'}
+      onClick={() => setActiveView('ministry')}
+      icon={<Shield size={18} />}
+      label="لوحة الوزارة"
+      variant="portal"
+    />
 
             <div className="pt-5 mt-5 border-t border-slate-100">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.35em] font-mono px-2 mb-3">
@@ -1161,6 +1171,7 @@ function AppContent() {
                 {activeView === 'campaigns' && <Campaigns />}
                 {activeView === 'stats' && <ExecutionStats />}
                 {activeView === 'profile' && <Profile />}
+                {activeView === 'ministry'  && <MinistryDashboard />} 
               </motion.div>
             </AnimatePresence>
           </main>

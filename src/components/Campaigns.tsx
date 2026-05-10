@@ -555,6 +555,7 @@ import { db, auth } from '../lib/firebase';
 import { cn, handleFirestoreError } from '../lib/utils';
 import { Campaign } from '../types';
 import { REGIONS, INSTITUTIONS } from '../constants';
+import CommunityAdoption from './CommunityAdoption';
 
 export default function Campaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -881,6 +882,8 @@ export default function Campaigns() {
         )}
       </div>
 
+       <CommunityAdoption />
+      
       {/* Leaderboard */}
       <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
