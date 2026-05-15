@@ -731,6 +731,7 @@ import {
   Mic,
   WifiOff,
   ChevronLeft,
+  Gavel,
 } from 'lucide-react';
 import { signInAnonymously, signOut } from 'firebase/auth';
 import { auth, useAuth, db } from './lib/firebase';
@@ -820,8 +821,10 @@ import NavigationMenu from './components/NavigationMenu';
 import VoiceAssistant from './components/VoiceAssistant';
 import MinistryDashboard from './components/MinistryDashboard';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import Tenders from './components/Tenders';
 
-type View = 'dashboard' | 'report' | 'campaigns' | 'stats' | 'profile' | 'ministry';
+type View = 'dashboard' | 'report' | 'campaigns' | 'stats' | 'profile' | 'ministry' | 'tenders';
+
 
 
 const VIEW_META: Record<View, { label: string; icon: React.ReactNode }> = {
@@ -830,7 +833,8 @@ const VIEW_META: Record<View, { label: string; icon: React.ReactNode }> = {
   campaigns:  { label: 'الحملات الميدانية', icon: <Users size={16} /> },
   stats:      { label: 'التحليلات',         icon: <Activity size={16} /> },
   profile:    { label: 'ملفي الشخصي',      icon: <UserIcon size={16} /> },
-  ministry:   { label: 'لوحة الوزارة',     icon: <Shield size={16} /> },
+  ministry: { label: 'لوحة الوزارة', icon: <Shield size={16} /> },
+  tenders: { label: 'المناقصات', icon: <Gavel size={16} /> },
 };
 
 export default function App() {
@@ -1066,6 +1070,13 @@ function AppContent() {
       variant="portal"
     />
 
+            <SidebarButton
+  active={activeView === 'tenders'}
+  onClick={() => setActiveView('tenders')}
+  icon={<Gavel size={18} />}
+  label="المناقصات"
+/>
+            
             <div className="pt-5 mt-5 border-t border-slate-100">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.35em] font-mono px-2 mb-3">
                 الحساب
@@ -1171,7 +1182,8 @@ function AppContent() {
                 {activeView === 'campaigns' && <Campaigns />}
                 {activeView === 'stats' && <ExecutionStats />}
                 {activeView === 'profile' && <Profile />}
-                {activeView === 'ministry'  && <MinistryDashboard />} 
+                {activeView === 'ministry' && <MinistryDashboard />} 
+                {activeView === 'tenders' && <Tenders role={role} />}
               </motion.div>
             </AnimatePresence>
           </main>

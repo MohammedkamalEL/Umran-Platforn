@@ -42,7 +42,7 @@ const MINISTRIES: Record<MinistryKey, {
   gradient: string;
 }> = {
   water: {
-    label: "وزارة المياه",
+    label: "هيئة مياه ولاية الخرطوم",
     labelEn: "Ministry of Water",
     issueType: "water",
     Icon: Droplets,
@@ -52,7 +52,7 @@ const MINISTRIES: Record<MinistryKey, {
     gradient: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 60%, #38bdf8 100%)",
   },
   electricity: {
-    label: "وزارة الكهرباء",
+    label: "شركة الكهرباء",
     labelEn: "Ministry of Electricity",
     issueType: "electricity",
     Icon: Zap,
