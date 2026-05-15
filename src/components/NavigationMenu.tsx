@@ -22,7 +22,7 @@
 // ];
 
 // const SECONDARY_ITEMS = [
-//   { id: 'portal', label: 'بوابة المؤسسات الحكومية', icon: <LogIn size={16} /> },
+//   { id: 'portal', label: 'بوابة المؤسسات  ', icon: <LogIn size={16} /> },
 //   { id: 'settings', label: 'إعدادات النظام', icon: <Settings size={16} /> },
 //   { id: 'security', label: 'مركز أمن البيانات', icon: <Shield size={16} /> },
 //   { id: 'help', label: 'مركز الدعم والإرشاد', icon: <HelpCircle size={16} /> },
@@ -203,7 +203,7 @@
 // ];
 
 // const SECONDARY_ITEMS = [
-//   { id: 'portal', label: 'بوابة المؤسسات الحكومية', icon: <LogIn size={16} /> },
+//   { id: 'portal', label: 'بوابة المؤسسات  ', icon: <LogIn size={16} /> },
 //   { id: 'settings', label: 'إعدادات النظام', icon: <Settings size={16} /> },
 //   { id: 'security', label: 'مركز أمن البيانات', icon: <Shield size={16} /> },
 //   { id: 'help', label: 'مركز الدعم والإرشاد', icon: <HelpCircle size={16} /> },
@@ -384,7 +384,7 @@
 // ];
 
 // const SECONDARY_ITEMS = [
-//   { id: 'portal', label: 'بوابة المؤسسات الحكومية', icon: <LogIn size={16} /> },
+//   { id: 'portal', label: 'بوابة المؤسسات  ', icon: <LogIn size={16} /> },
 //   { id: 'settings', label: 'إعدادات النظام', icon: <Settings size={16} /> },
 //   { id: 'security', label: 'مركز أمن البيانات', icon: <Shield size={16} /> },
 //   { id: 'help', label: 'مركز الدعم والإرشاد', icon: <HelpCircle size={16} /> },
@@ -557,13 +557,13 @@ const MENU_ITEMS: { id: 'dashboard' | 'campaigns' | 'stats' | 'profile' | 'repor
   { id: 'dashboard', label: 'المخطط القومي الشامل', sublabel: 'NATIONAL_GIS_SYNC', icon: <MapIcon size={20} /> },
   { id: 'campaigns', label: 'الحملات والمبادرات', sublabel: 'COMMUNITY_ACTION', icon: <Users size={20} /> },
   { id: 'stats', label: 'مركز تحليل البيانات', sublabel: 'ANALYTICS_CORE', icon: <Activity size={20} /> },
-  { id: 'tenders', label: 'المناقصات الحكومية', sublabel: 'GOV_TENDERS', icon: <Gavel size={20} />, badge: 'جديد' },
+  { id: 'tenders', label: 'المناقصات  ', sublabel: 'GOV_TENDERS', icon: <Gavel size={20} />, badge: 'جديد' },
   { id: 'profile', label: 'الهوية الوطنية الرقمية', sublabel: 'CITIZEN_PROFILE', icon: <UserIcon size={20} /> },
   { id: 'ministry', label: 'لوحة إدارة الوزارات', sublabel: 'MINISTRY_DASHBOARD', icon: <Shield size={20} /> },
 ];
 
 const SECONDARY_ITEMS = [
-  { id: 'portal', label: 'بوابة المؤسسات الحكومية', icon: <LogIn size={16} /> },
+  { id: 'portal', label: 'بوابة المؤسسات  ', icon: <LogIn size={16} /> },
   { id: 'settings', label: 'إعدادات النظام', icon: <Settings size={16} /> },
   { id: 'security', label: 'مركز أمن البيانات', icon: <Shield size={16} /> },
   { id: 'help', label: 'مركز الدعم والإرشاد', icon: <HelpCircle size={16} /> },

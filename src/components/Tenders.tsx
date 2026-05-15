@@ -1128,7 +1128,8 @@ import {
   ShieldCheck, BadgeCheck, CircleDot, Sparkles,
   Download, Upload, Award, BarChart3, Briefcase,
   ClipboardList, Wrench, DollarSign, Package,
-  TrendingUp, Medal, Hash, Calendar
+  TrendingUp, Medal, Hash, Calendar,
+  CircleDollarSign
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { REGIONS, INSTITUTIONS } from '../constants';
@@ -1963,7 +1964,7 @@ function OpenTendersSection({ tenders, onDownload }: {
                     {downloading === t.id ? (
                       <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.7 }}><Download size={10} /></motion.div> جاري التحميل...</>
                     ) : (
-                      <><Download size={10} /> كراسة الشروط</>
+                      <><CircleDollarSign size={10} />شراء كراسة الشروط </>
                     )}
                   </motion.button>
                 </div>
@@ -2880,7 +2881,7 @@ export default function Tenders({ role = 'citizen' }: { role?: UserRole }) {
               <Sparkles size={20} className="text-amber-400" />
             </div>
             <div className="text-right flex-1">
-              <p className="font-black text-sm">تنافس وفُز بمشاريع حكومية</p>
+              <p className="font-black text-sm">تنافس وفُز بالمناقصات المطروحة</p>
               <p className="text-white/50 text-xs mt-0.5">قدِّم عرضك على أي مناقصة مفتوحة، وابنِ سجلك كمقاول موثوق</p>
             </div>
           </div>
