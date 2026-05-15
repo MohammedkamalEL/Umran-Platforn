@@ -2833,7 +2833,7 @@ export default function Tenders({ role = 'citizen' }: { role?: UserRole }) {
           </div>
           <div className="text-right">
             <div className="flex items-center gap-2 justify-end mb-0.5">
-              <h2 className="text-xl font-black text-slate-900">المناقصات الحكومية</h2>
+              <h2 className="text-xl font-black text-slate-900"> المناقصات المطروحة </h2>
               <div className="w-8 h-8 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-center">
                 <Gavel size={16} className="text-emerald-600" />
               </div>
